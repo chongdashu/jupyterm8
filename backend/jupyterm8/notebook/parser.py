@@ -1,6 +1,7 @@
-import requests
-import nbformat
 from urllib.parse import urlparse
+
+import nbformat
+import requests
 
 
 def transform_github_url(url: str) -> str:

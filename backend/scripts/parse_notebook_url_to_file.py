@@ -1,7 +1,7 @@
-import sys
 import os
-from urllib.parse import urlparse
+import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,15 +17,21 @@ def extract_filename(url):
 
 def main():
     if len(sys.argv) < 2 or len(sys.argv) > 3:
-        print("Usage: python parse_notebook.py <notebook_url> [output_file]")
+        print("Usage: python parse_notebook.py <notebook_url> [output_filename]")
         sys.exit(1)
 
     notebook_url = sys.argv[1]
 
+    # Create the output directory if it doesn't exist
+    output_dir = Path(__file__).parent / "output"
+    output_dir.mkdir(exist_ok=True)
+
     if len(sys.argv) == 3:
-        output_file = sys.argv[2]
+        output_filename = sys.argv[2]
     else:
-        output_file = extract_filename(notebook_url)
+        output_filename = extract_filename(notebook_url)
+
+    output_file = output_dir / output_filename
 
     try:
         parsed_content = process_notebook_url(notebook_url)
