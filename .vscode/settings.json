@@ -1,0 +1,96 @@
+{
+  // Python Environment
+  "python.envFile": "${workspaceFolder}/.env",
+
+  // Language Server and Analysis
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.extraPaths": ["${workspaceFolder}"],
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.useLibraryCodeForTypes": true,
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.indexing": true,
+  "python.analysis.packageIndexDepths": [
+    { "name": "django", "depth": 2 },
+    { "name": "fastapi", "depth": 2 }
+  ],
+
+  // Ruff Configuration
+  "ruff.enable": true,
+  "ruff.organizeImports": true,
+  "ruff.fixAll": true,
+  "ruff.lint.run": "onSave",
+  "ruff.format.args": ["--line-length", "120"],
+
+  // Editor Settings
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true,
+    "source.organizeImports": true
+  },
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": true,
+      "source.organizeImports": true
+    },
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.rulers": [120]
+  },
+
+  // File Handling
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+
+  // Testing
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.nosetestsEnabled": false,
+
+  // Documentation
+  "autoDocstring.docstringFormat": "google",
+
+  // Disabled Linters (replaced by Ruff)
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": false,
+  "python.formatting.provider": "none",
+
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/venv": true,
+    "**/env": true,
+    "**/.env": true,
+    "**/.vscode": true,
+    "**/.idea": true,
+    "**/*.log": true,
+    "**/*.sqlite3": true,
+    "**/node_modules": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/.pytest_cache": true,
+    "**/htmlcov": true,
+    "**/.coverage": true,
+    "**/docker": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/venv/**": true,
+    "**/env/**": true,
+    "**/build/**": true,
+    "**/dist/**": true
+  }
+}
