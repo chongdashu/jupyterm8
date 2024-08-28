@@ -12,19 +12,22 @@ def create_app() -> FastAPI:
     from notebook.router import router as notebook_router
 
     app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],  # Allows all methods
+        allow_headers=["*"],  # Allows all headers
+    )
     app.include_router(notebook_router, prefix="/notebook", tags=["notebook"])
+
     return app
 
 
 app = create_app()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
-)
 
 
 def run_app(app_factory: Callable[[], FastAPI]) -> None:

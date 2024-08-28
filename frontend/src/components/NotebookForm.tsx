@@ -14,7 +14,9 @@ export default function NotebookForm() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `${config.apiUrl}/store-notebook?url=${encodeURIComponent(url)}`
+        `${config.apiUrl}/notebook/store-notebook?url=${encodeURIComponent(
+          url
+        )}`
       );
       const data = await response.json();
       setDownloadUrl(data.download_url);
