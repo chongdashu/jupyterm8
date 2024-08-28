@@ -29,9 +29,9 @@ aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
 aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 aws_default_region = os.getenv("AWS_DEFAULT_REGION")
 
-logger.debug(f"AWS_ACCESS_KEY_ID: {mask_string(aws_access_key_id)}")
-logger.debug(f"AWS_SECRET_ACCESS_KEY: {mask_string(aws_secret_access_key)}")
-logger.debug(f"AWS_DEFAULT_REGION: {aws_default_region}")
+logger.info(f"AWS_ACCESS_KEY_ID: {mask_string(aws_access_key_id)}")
+logger.info(f"AWS_SECRET_ACCESS_KEY: {mask_string(aws_secret_access_key)}")
+logger.info(f"AWS_DEFAULT_REGION: {aws_default_region}")
 
 # S3 client setup
 s3_client = boto3.client(
