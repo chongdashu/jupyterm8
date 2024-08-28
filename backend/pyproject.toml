@@ -44,7 +44,7 @@ target-version = "py311"
 max-complexity = 10
 
 [tool.ruff.isort]
-known-first-party = ["my_project_name"]
+known-first-party = ["jupyterm8"]
 
 [tool.ruff.flake8-tidy-imports]
 ban-relative-imports = "all"
