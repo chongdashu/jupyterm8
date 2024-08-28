@@ -24,9 +24,9 @@ def parse_notebook(notebook_content: str) -> str:
 
     for cell in notebook.cells:
         if cell.cell_type == "markdown":
-            output.append(f"# Markdown Cell\n{cell.source}\n")
+            output.append(f"{cell.source}\n")
         elif cell.cell_type == "code":
-            output.append(f"# Code Cell\n```python\n{cell.source}\n```\n")
+            output.append(f"```python\n{cell.source}\n```\n")
 
     return "\n".join(output)
 

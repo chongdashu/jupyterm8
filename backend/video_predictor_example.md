@@ -1,12 +1,9 @@
-# Code Cell
 ```python
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 ```
 
-# Markdown Cell
 # Video segmentation with SAM 2
 
-# Markdown Cell
 This notebook shows how to use SAM 2 for interactive segmentation in videos. It will cover the following:
 
 - adding clicks (or box) on a frame to get and refine _masklets_ (spatio-temporal masks)
@@ -15,25 +12,20 @@ This notebook shows how to use SAM 2 for interactive segmentation in videos. It 
 
 We use the terms _segment_ or _mask_ to refer to the model prediction for an object on a single frame, and _masklet_ to refer to the spatio-temporal masks across the entire video. 
 
-# Markdown Cell
 <a target="_blank" href="https://colab.research.google.com/github/facebookresearch/segment-anything-2/blob/main/notebooks/video_predictor_example.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-# Markdown Cell
 ## Environment Set-up
 
-# Markdown Cell
 If running locally using jupyter, first install `segment-anything-2` in your environment using the [installation instructions](https://github.com/facebookresearch/segment-anything-2#installation) in the repository.
 
 If running from Google Colab, set `using_colab=True` below and run the cell. In Colab, be sure to select 'GPU' under 'Edit'->'Notebook Settings'->'Hardware accelerator'. Note that it's recommended to use **A100 or L4 GPUs when running in Colab** (T4 GPUs might also work, but could be slow and might run out of memory in some cases).
 
-# Code Cell
 ```python
 using_colab = False
 ```
 
-# Code Cell
 ```python
 if using_colab:
     import torch
@@ -53,10 +45,8 @@ if using_colab:
     !wget -P ../checkpoints/ https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt
 ```
 
-# Markdown Cell
 ## Set-up
 
-# Code Cell
 ```python
 import os
 # if using Apple MPS, fall back to CPU for unsupported ops
@@ -67,7 +57,6 @@ import matplotlib.pyplot as plt
 from PIL import Image
 ```
 
-# Code Cell
 ```python
 # select the device for computation
 if torch.cuda.is_available():
@@ -93,10 +82,8 @@ elif device.type == "mps":
     )
 ```
 
-# Markdown Cell
 ### Loading the SAM 2 video predictor
 
-# Code Cell
 ```python
 from sam2.build_sam import build_sam2_video_predictor
 
@@ -106,7 +93,6 @@ model_cfg = "sam2_hiera_l.yaml"
 predictor = build_sam2_video_predictor(model_cfg, sam2_checkpoint, device=device)
 ```
 
-# Code Cell
 ```python
 def show_mask(mask, ax, obj_id=None, random_color=False):
     if random_color:
@@ -133,10 +119,8 @@ def show_box(box, ax):
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0, 0, 0, 0), lw=2))
 ```
 
-# Markdown Cell
 #### Select an example video
 
-# Markdown Cell
 We assume that the video is stored as a list of JPEG frames with filenames like `<frame_index>.jpg`.
 
 For your custom videos, you can extract their JPEG frames using ffmpeg (https://ffmpeg.org/) as follows:
@@ -145,7 +129,6 @@ ffmpeg -i <your_video>.mp4 -q:v 2 -start_number 0 <output_dir>/'%05d.jpg'
 ```
 where `-q:v` generates high-quality JPEG frames and `-start_number 0` asks ffmpeg to start the JPEG file from `00000.jpg`.
 
-# Code Cell
 ```python
 # `video_dir` a directory of JPEG frames with filenames like `<frame_index>.jpg`
 video_dir = "./videos/bedroom"
@@ -164,43 +147,34 @@ plt.title(f"frame {frame_idx}")
 plt.imshow(Image.open(os.path.join(video_dir, frame_names[frame_idx])))
 ```
 
-# Markdown Cell
 #### Initialize the inference state
 
-# Markdown Cell
 SAM 2 requires stateful inference for interactive video segmentation, so we need to initialize an **inference state** on this video.
 
 During initialization, it loads all the JPEG frames in `video_path` and stores their pixels in `inference_state` (as shown in the progress bar below).
 
-# Code Cell
 ```python
 inference_state = predictor.init_state(video_path=video_dir)
 ```
 
-# Markdown Cell
 ### Example 1: Segment & track one object
 
-# Markdown Cell
 Note: if you have run any previous tracking using this `inference_state`, please reset it first via `reset_state`.
 
 (The cell below is just for illustration; it's not needed to call `reset_state` here as this `inference_state` is just freshly initialized above.)
 
-# Code Cell
 ```python
 predictor.reset_state(inference_state)
 ```
 
-# Markdown Cell
 #### Step 1: Add a first click on a frame
 
-# Markdown Cell
 To get started, let's try to segment the child on the left.
 
 Here we make a **positive click** at (x, y) = (210, 350) with label `1`, by sending their coordinates and labels into the `add_new_points_or_box` API.
 
 Note: label `1` indicates a *positive click (to add a region)* while label `0` indicates a *negative click (to remove a region)*.
 
-# Code Cell
 ```python
 ann_frame_idx = 0  # the frame index we interact with
 ann_obj_id = 1  # give a unique id to each object we interact with (it can be any integers)
@@ -225,17 +199,14 @@ show_points(points, labels, plt.gca())
 show_mask((out_mask_logits[0] > 0.0).cpu().numpy(), plt.gca(), obj_id=out_obj_ids[0])
 ```
 
-# Markdown Cell
 #### Step 2: Add a second click to refine the prediction
 
-# Markdown Cell
 Hmm, it seems that although we wanted to segment the child on the left, the model predicts the mask for only the shorts -- this can happen since there is ambiguity from a single click about what the target object should be. We can refine the mask on this frame via another positive click on the child's shirt.
 
 Here we make a **second positive click** at (x, y) = (250, 220) with label `1` to expand the mask.
 
 Note: we need to send **all the clicks and their labels** (i.e. not just the last click) when calling `add_new_points_or_box`.
 
-# Code Cell
 ```python
 ann_frame_idx = 0  # the frame index we interact with
 ann_obj_id = 1  # give a unique id to each object we interact with (it can be any integers)
@@ -261,16 +232,12 @@ show_points(points, labels, plt.gca())
 show_mask((out_mask_logits[0] > 0.0).cpu().numpy(), plt.gca(), obj_id=out_obj_ids[0])
 ```
 
-# Markdown Cell
 With this 2nd refinement click, now we get a segmentation mask of the entire child on frame 0.
 
-# Markdown Cell
 #### Step 3: Propagate the prompts to get the masklet across the video
 
-# Markdown Cell
 To get the masklet throughout the entire video, we propagate the prompts using the `propagate_in_video` API.
 
-# Code Cell
 ```python
 # run propagation throughout the video and collect the results in a dict
 video_segments = {}  # video_segments contains the per-frame segmentation results
@@ -291,15 +258,12 @@ for out_frame_idx in range(0, len(frame_names), vis_frame_stride):
         show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
 ```
 
-# Markdown Cell
 #### Step 4: Add new prompts to further refine the masklet
 
-# Markdown Cell
 It appears that in the output masklet above, there are some imperfections in boundary details on frame 150.
 
 With SAM 2 we can fix the model predictions interactively. We can add a **negative click** at (x, y) = (82, 415) on this frame with label `0` to refine the masklet. Here we call the `add_new_points_or_box` API with a different `frame_idx` argument to indicate the frame index we want to refine.
 
-# Code Cell
 ```python
 ann_frame_idx = 150  # further refine some details on this frame
 ann_obj_id = 1  # give a unique id to the object we interact with (it can be any integers)
@@ -330,13 +294,10 @@ show_points(points, labels, plt.gca())
 show_mask((out_mask_logits > 0.0).cpu().numpy(), plt.gca(), obj_id=ann_obj_id)
 ```
 
-# Markdown Cell
 #### Step 5: Propagate the prompts (again) to get the masklet across the video
 
-# Markdown Cell
 Let's get an updated masklet for the entire video. Here we call `propagate_in_video` again to propagate all the prompts after adding the new refinement click above.
 
-# Code Cell
 ```python
 # run propagation throughout the video and collect the results in a dict
 video_segments = {}  # video_segments contains the per-frame segmentation results
@@ -357,26 +318,20 @@ for out_frame_idx in range(0, len(frame_names), vis_frame_stride):
         show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
 ```
 
-# Markdown Cell
 The segments now look good on all frames.
 
-# Markdown Cell
 ### Example 2: Segment an object using box prompt
 
-# Markdown Cell
 Note: if you have run any previous tracking using this `inference_state`, please reset it first via `reset_state`.
 
-# Code Cell
 ```python
 predictor.reset_state(inference_state)
 ```
 
-# Markdown Cell
 In addition to using clicks as inputs, SAM 2 also supports segmenting and tracking objects in a video via **bounding boxes**.
 
 In the example below, we segment the child on the right using a **box prompt** of (x_min, y_min, x_max, y_max) = (300, 0, 500, 400) on frame 0 as input into the `add_new_points_or_box` API.
 
-# Code Cell
 ```python
 ann_frame_idx = 0  # the frame index we interact with
 ann_obj_id = 4  # give a unique id to each object we interact with (it can be any integers)
@@ -398,14 +353,12 @@ show_box(box, plt.gca())
 show_mask((out_mask_logits[0] > 0.0).cpu().numpy(), plt.gca(), obj_id=out_obj_ids[0])
 ```
 
-# Markdown Cell
 Here, SAM 2 gets a pretty good segmentation mask of the entire child, even though the input bounding box is not perfectly tight around the object.
 
 Similar to the previous example, if the returned mask from is not perfect when using a box prompt, we can also further **refine** the output using positive or negative clicks. To illustrate this, here we make a **positive click** at (x, y) = (460, 60) with label `1` to expand the segment around the child's hair.
 
 Note: to refine the segmentation mask from a box prompt, we need to send **both the original box input and all subsequent refinement clicks and their labels** when calling `add_new_points_or_box`.
 
-# Code Cell
 ```python
 ann_frame_idx = 0  # the frame index we interact with
 ann_obj_id = 4  # give a unique id to each object we interact with (it can be any integers)
@@ -435,10 +388,8 @@ show_points(points, labels, plt.gca())
 show_mask((out_mask_logits[0] > 0.0).cpu().numpy(), plt.gca(), obj_id=out_obj_ids[0])
 ```
 
-# Markdown Cell
 Then, to get the masklet throughout the entire video, we propagate the prompts using the `propagate_in_video` API.
 
-# Code Cell
 ```python
 # run propagation throughout the video and collect the results in a dict
 video_segments = {}  # video_segments contains the per-frame segmentation results
@@ -459,39 +410,30 @@ for out_frame_idx in range(0, len(frame_names), vis_frame_stride):
         show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
 ```
 
-# Markdown Cell
 Note that in addition to clicks or boxes, SAM 2 also supports directly using a **mask prompt** as input via the `add_new_mask` method in the `SAM2VideoPredictor` class. This can be helpful in e.g. semi-supervised VOS evaluations (see [tools/vos_inference.py](https://github.com/facebookresearch/segment-anything-2/blob/main/tools/vos_inference.py) for an example).
 
-# Markdown Cell
 ### Example 3: Segment multiple objects simultaneously
 
-# Markdown Cell
 Note: if you have run any previous tracking using this `inference_state`, please reset it first via `reset_state`.
 
-# Code Cell
 ```python
 predictor.reset_state(inference_state)
 ```
 
-# Markdown Cell
 #### Step 1: Add two objects on a frame
 
-# Markdown Cell
 SAM 2 can also segment and track two or more objects at the same time. One way, of course, is to do them one by one. However, it would be more efficient to batch them together (e.g. so that we can share the image features between objects to reduce computation costs).
 
 This time, let's focus on object parts and segment **the shirts of both childen** in this video. Here we add prompts for these two objects and assign each of them a unique object id.
 
-# Code Cell
 ```python
 prompts = {}  # hold all the clicks we add for visualization
 ```
 
-# Markdown Cell
 Add the first object (the left child's shirt) with a **positive click** at (x, y) = (200, 300) on frame 0.
 
 We assign it to object id `2` (it can be arbitrary integers, and only needs to be unique for each object to track), which is passed to the `add_new_points_or_box` API to distinguish the object we are clicking upon.
 
-# Code Cell
 ```python
 ann_frame_idx = 0  # the frame index we interact with
 ann_obj_id = 2  # give a unique id to each object we interact with (it can be any integers)
@@ -519,10 +461,8 @@ for i, out_obj_id in enumerate(out_obj_ids):
     show_mask((out_mask_logits[i] > 0.0).cpu().numpy(), plt.gca(), obj_id=out_obj_id)
 ```
 
-# Markdown Cell
 Hmm, this time we just want to select the child's shirt, but the model predicts the mask for the entire child. Let's refine the prediction with a **negative click** at (x, y) = (275, 175).
 
-# Code Cell
 ```python
 # add the first object
 ann_frame_idx = 0  # the frame index we interact with
@@ -552,14 +492,12 @@ for i, out_obj_id in enumerate(out_obj_ids):
     show_mask((out_mask_logits[i] > 0.0).cpu().numpy(), plt.gca(), obj_id=out_obj_id)
 ```
 
-# Markdown Cell
 After the 2nd negative click, now we get the left child's shirt as our first object.
 
 Let's move on to the second object (the right child's shirt) with a positive click at (x, y) = (400, 150) on frame 0. Here we assign object id `3` to this second object (it can be arbitrary integers, and only needs to be unique for each object to track).
 
 Note: when there are multiple objects, the `add_new_points_or_box` API will return a list of masks for each object.
 
-# Code Cell
 ```python
 ann_frame_idx = 0  # the frame index we interact with
 ann_obj_id = 3  # give a unique id to each object we interact with (it can be any integers)
@@ -590,18 +528,14 @@ for i, out_obj_id in enumerate(out_obj_ids):
     show_mask((out_mask_logits[i] > 0.0).cpu().numpy(), plt.gca(), obj_id=out_obj_id)
 ```
 
-# Markdown Cell
 This time the model predicts the mask of the shirt we want to track in just one click. Nice!
 
-# Markdown Cell
 #### Step 2: Propagate the prompts to get masklets across the video
 
-# Markdown Cell
 Now, we propagate the prompts for both objects to get their masklets throughout the video.
 
 Note: when there are multiple objects, the `propagate_in_video` API will return a list of masks for each object.
 
-# Code Cell
 ```python
 # run propagation throughout the video and collect the results in a dict
 video_segments = {}  # video_segments contains the per-frame segmentation results
@@ -622,7 +556,6 @@ for out_frame_idx in range(0, len(frame_names), vis_frame_stride):
         show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
 ```
 
-# Markdown Cell
 Looks like both children's shirts are well segmented in this video.
 
 Now you can try SAM 2 on your own videos and use cases! 
