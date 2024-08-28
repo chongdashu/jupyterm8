@@ -6,9 +6,6 @@ from typing import Tuple
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-import tempfile
-from pathlib import Path
-
 import boto3
 from botocore.exceptions import ClientError
 from fastapi import HTTPException
@@ -46,35 +43,20 @@ S3_BUCKET_NAME = os.environ.get("AWS_S3_BUCKET_NAME", "<your-bucket-name>")
 
 def process_notebook(url: str) -> str:
     try:
-        with tempfile.NamedTemporaryFile(mode="w+", suffix=".md", delete=False) as temp_file:
-            content = process_notebook_url(url)
-            temp_file.write(content)
-            temp_file.flush()
-
-            # Read the content back from the file
-            temp_file.seek(0)
-            result = temp_file.read()
-
-        # Delete the temporary file after processing
-        Path(temp_file.name).unlink()
-        return result
+        return process_notebook_url(url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing notebook: {str(e)}")
 
 
-def process_and_store_notebook(url: str) -> Tuple[str, str]:
+def process_and_store_notebook(url: str) -> Tuple[str, str, str]:
     try:
         # Process the notebook content
         content = process_notebook(url)
         file_name = f"notebook_{hash(url)}.md"
         s3_key = f"processed_notebooks/{file_name}"
 
-        print(f"Attempting to store in bucket: {S3_BUCKET_NAME}")
-        print(f"S3 key: {s3_key}")
-
         # Upload content to S3
-        response = s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=s3_key, Body=content)
-        print(f"S3 put_object response: {response}")
+        s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=s3_key, Body=content)
 
         # Generate a pre-signed URL for downloading
         download_url = s3_client.generate_presigned_url(
@@ -83,13 +65,12 @@ def process_and_store_notebook(url: str) -> Tuple[str, str]:
             ExpiresIn=3600,  # URL expires in 1 hour
         )
 
-        return file_name, download_url
+        return file_name, download_url, content
 
     except ClientError as e:
-        print(f"ClientError: {str(e)}")
-        print(f"Error response: {e.response}")
+        logger.error(f"ClientError: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error storing notebook in S3: {str(e)}")
 
     except Exception as e:
-        print(f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing and storing notebook: {str(e)}")
