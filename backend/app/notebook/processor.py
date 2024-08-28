@@ -38,7 +38,8 @@ s3_client = boto3.client(
     "s3",
     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    region_name=os.getenv("AWS_DEFAULT_REGION"),
+    region_name=(region_name := os.getenv("AWS_DEFAULT_REGION")),
+    endpoint_url=f"https://s3.{region_name}.amazonaws.com",
 )
 S3_BUCKET_NAME = os.environ.get("AWS_S3_BUCKET_NAME", "<your-bucket-name>")
 
@@ -63,6 +64,7 @@ def process_notebook(url: str) -> str:
 
 def process_and_store_notebook(url: str) -> Tuple[str, str]:
     try:
+        # Process the notebook content
         content = process_notebook(url)
         file_name = f"notebook_{hash(url)}.md"
         s3_key = f"processed_notebooks/{file_name}"
@@ -72,7 +74,6 @@ def process_and_store_notebook(url: str) -> Tuple[str, str]:
 
         # Upload content to S3
         response = s3_client.put_object(Bucket=S3_BUCKET_NAME, Key=s3_key, Body=content)
-
         print(f"S3 put_object response: {response}")
 
         # Generate a pre-signed URL for downloading
@@ -83,10 +84,12 @@ def process_and_store_notebook(url: str) -> Tuple[str, str]:
         )
 
         return file_name, download_url
+
     except ClientError as e:
         print(f"ClientError: {str(e)}")
         print(f"Error response: {e.response}")
         raise HTTPException(status_code=500, detail=f"Error storing notebook in S3: {str(e)}")
+
     except Exception as e:
         print(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing and storing notebook: {str(e)}")

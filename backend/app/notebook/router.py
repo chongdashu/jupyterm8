@@ -18,4 +18,9 @@ async def parse_notebook(url: Annotated[str, Query(description="URL of the Jupyt
 @router.get("/store-notebook", response_class=JSONResponse)
 async def store_notebook(url: Annotated[str, Query(description="URL of the Jupyter notebook")]) -> JSONResponse:
     file_name, download_url = await run_in_threadpool(process_and_store_notebook, url)
-    return JSONResponse({"file_name": file_name, "download_url": download_url})
+    return JSONResponse(
+        {
+            "file_name": file_name,
+            "download_url": download_url,
+        }
+    )
