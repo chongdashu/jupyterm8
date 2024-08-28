@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import config from "../config";
 
 export default function NotebookForm() {
   const [url, setUrl] = useState("");
@@ -13,7 +14,7 @@ export default function NotebookForm() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `/api/store-notebook?url=${encodeURIComponent(url)}`
+        `${config.apiUrl}/store-notebook?url=${encodeURIComponent(url)}`
       );
       const data = await response.json();
       setDownloadUrl(data.download_url);
