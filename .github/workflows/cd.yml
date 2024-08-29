@@ -48,6 +48,16 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG ./frontend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
 
+      - name: Copy docker-compose.yml to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          AWS_HOST: ${{ secrets.AWS_HOST }}
+          AWS_USER: ${{ secrets.AWS_USER }}
+          PROJECT_ROOT: ${{ env.PROJECT_ROOT }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          scp -o StrictHostKeyChecking=no -i private_key docker-compose.yml $AWS_USER@$AWS_HOST:$PROJECT_ROOT/
+
       - name: Deploy to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
@@ -56,15 +66,7 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} '
-            mkdir -p ${{ env.PROJECT_ROOT }} &&
             cd ${{ env.PROJECT_ROOT }} &&
-
-            # Pull the latest code
-            if [ -d ".git" ]; then
-              git pull origin master
-            else
-              git clone https://github.com/yourusername/notebook-parser.git .
-            fi
 
             # Update docker-compose.yml with new image tags
             sed -i "s|image: .*backend:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG|g" docker-compose.yml
