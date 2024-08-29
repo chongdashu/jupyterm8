@@ -13,6 +13,8 @@ env:
   AWS_USER: ${{ secrets.AWS_USER }}
   PROJECT_ROOT: /home/${{ secrets.AWS_USER }}/jupyterm8
   GH_PAT: ${{ secrets.GH_PAT }}
+  GH_USERNAME: ${{ secrets.GH_USERNAME }}
+  GH_REPO_NAME: ${{ secrets.GH_REPO_NAME }}
 
 jobs:
   deploy:
@@ -55,11 +57,13 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
           GH_PAT: ${{ secrets.GH_PAT }}
+          GH_USERNAME: ${{ secrets.GH_USERNAME }}
+          GH_REPO_NAME: ${{ secrets.GH_REPO_NAME }}
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} '
             cd ${{ env.PROJECT_ROOT }} || {
-              git clone https://$GH_PAT@github.com/yourusername/notebook-parser.git ${{ env.PROJECT_ROOT }} &&
+              git clone https://$GH_PAT@github.com/$GH_USERNAME/$GH_REPO_NAME.git ${{ env.PROJECT_ROOT }} &&
               cd ${{ env.PROJECT_ROOT }};
             }
 
