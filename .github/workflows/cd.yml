@@ -12,7 +12,7 @@ env:
   AWS_HOST: ${{ secrets.AWS_HOST }}
   AWS_USER: ${{ secrets.AWS_USER }}
   PROJECT_ROOT: /home/${{ secrets.AWS_USER }}/jupyterm8
-  GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+  GH_PAT: ${{ secrets.GH_PAT }}
 
 jobs:
   deploy:
@@ -54,12 +54,12 @@ jobs:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} '
             cd ${{ env.PROJECT_ROOT }} || {
-              git clone https://$GITHUB_PAT@github.com/yourusername/notebook-parser.git ${{ env.PROJECT_ROOT }} &&
+              git clone https://$GH_PAT@github.com/yourusername/notebook-parser.git ${{ env.PROJECT_ROOT }} &&
               cd ${{ env.PROJECT_ROOT }};
             }
 
