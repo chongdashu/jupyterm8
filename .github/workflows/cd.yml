@@ -57,8 +57,8 @@ jobs:
           PROJECT_ROOT: /home/${{ secrets.AWS_USER }}/jupyterm8
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -o StrictHostKeyChecking=no -i private_key docker-compose.yml $AWS_USER@$AWS_HOST:$PROJECT_ROOT/
-          scp -o StrictHostKeyChecking=no -i private_key nginx.conf $AWS_USER@$AWS_HOST:$PROJECT_ROOT/
+          scp -o StrictHostKeyChecking=no -i private_key docker-compose.yml $AWS_USER@$AWS_HOST:$PROJECT_ROOT/docker-compose.yml
+          scp -o StrictHostKeyChecking=no -i private_key nginx.conf $AWS_USER@$AWS_HOST:$PROJECT_ROOT/nginx.conf
 
       - name: Deploy to EC2
         env:
