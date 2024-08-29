@@ -12,9 +12,7 @@ env:
   AWS_HOST: ${{ secrets.AWS_HOST }}
   AWS_USER: ${{ secrets.AWS_USER }}
   PROJECT_ROOT: /home/${{ secrets.AWS_USER }}/jupyterm8
-  GH_PAT: ${{ secrets.GH_PAT }}
-  GH_USERNAME: ${{ secrets.GH_USERNAME }}
-  GH_REPO_NAME: ${{ secrets.GH_REPO_NAME }}
+  GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
 
 jobs:
   deploy:
@@ -56,40 +54,36 @@ jobs:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-          GH_USERNAME: ${{ secrets.GH_USERNAME }}
-          GH_REPO_NAME: ${{ secrets.GH_REPO_NAME }}
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          ECR_REPOSITORY_BACKEND: ${{ secrets.ECR_REPOSITORY_BACKEND }}
+          ECR_REPOSITORY_FRONTEND: ${{ secrets.ECR_REPOSITORY_FRONTEND }}
+          FASTAPI_PORT: ${{ secrets.FASTAPI_PORT }}
+          FASTAPI_ALLOW_ORIGINS: ${{ secrets.FASTAPI_ALLOW_ORIGINS }}
+          FASTAPI_SSL_KEYFILE: ${{ secrets.FASTAPI_SSL_KEYFILE }}
+          FASTAPI_SSL_CERTFILE: ${{ secrets.FASTAPI_SSL_CERTFILE }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} '
-            cd ${{ env.PROJECT_ROOT }} || {
-              git clone https://$GH_PAT@github.com/$GH_USERNAME/$GH_REPO_NAME.git ${{ env.PROJECT_ROOT }} &&
-              cd ${{ env.PROJECT_ROOT }};
-            }
+            cd ${{ env.PROJECT_ROOT }} || mkdir -p ${{ env.PROJECT_ROOT }} && cd ${{ env.PROJECT_ROOT }};
 
-            # Pull the latest code
-            git pull origin master &&
-
-            # Update docker-compose.yml with new image tags
-            sed -i "s|image: .*backend:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG|g" docker-compose.yml
-            sed -i "s|image: .*frontend:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG|g" docker-compose.yml
-
-            # Set up backend environment variables
-            cat <<EOF > ./backend/.env
-            FASTAPI_PORT=${{ secrets.FASTAPI_PORT }}
-            FASTAPI_ALLOW_ORIGINS=${{ secrets.FASTAPI_ALLOW_ORIGINS }}
-            FASTAPI_SSL_KEYFILE=${{ secrets.FASTAPI_SSL_KEYFILE }}
-            FASTAPI_SSL_CERTFILE=${{ secrets.FASTAPI_SSL_CERTFILE }}
-            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
-            AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
-            EOF
-
-            # Set up frontend environment variables
-            echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" > ./frontend/.env.local
-
-            # Pull the latest images and restart the containers
-            docker-compose pull
-            docker-compose up -d --build
+            # Pull the latest images from ECR and start the containers with environment variables passed directly
+            ECR_REGISTRY=${ECR_REGISTRY} \
+            ECR_REPOSITORY_BACKEND=${ECR_REPOSITORY_BACKEND} \
+            ECR_REPOSITORY_FRONTEND=${ECR_REPOSITORY_FRONTEND} \
+            IMAGE_TAG=${IMAGE_TAG} \
+            FASTAPI_PORT=${FASTAPI_PORT} \
+            FASTAPI_ALLOW_ORIGINS=${FASTAPI_ALLOW_ORIGINS} \
+            FASTAPI_SSL_KEYFILE=${FASTAPI_SSL_KEYFILE} \
+            FASTAPI_SSL_CERTFILE=${FASTAPI_SSL_CERTFILE} \
+            AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+            AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+            AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
+            AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME} \
+            NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+            docker-compose up -d
           '
