@@ -14,13 +14,10 @@ def create_app() -> FastAPI:
     app = FastAPI()
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-        ],
+        allow_origins=os.getenv("FASTAPI_ALLOW_ORIGINS", "").split(","),
         allow_credentials=True,
-        allow_methods=["*"],  # Allows all methods
-        allow_headers=["*"],  # Allows all headers
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
     app.include_router(notebook_router, prefix="/notebook", tags=["notebook"])
 
@@ -33,7 +30,15 @@ app = create_app()
 def run_app(app_factory: Callable[[], FastAPI]) -> None:
     import uvicorn
 
-    uvicorn.run(app_factory(), host="0.0.0.0", port=int(os.getenv("FASTAPI_PORT", "8000")))
+    uvicorn.run(
+        app_factory(),
+        host="0.0.0.0",
+        port=int(
+            os.getenv("FASTAPI_PORT", "8000"),
+        ),
+        ssl_keyfile=os.getenv("FASTAPI_SSL_KEYFILE"),
+        ssl_certfile=os.getenv("FASTAPI_SSL_CERTFILE"),
+    )
 
 
 if __name__ == "__main__":

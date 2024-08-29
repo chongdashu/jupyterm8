@@ -69,7 +69,6 @@
     "**/*.pyc": true,
     "**/venv": true,
     "**/env": true,
-    "**/.env": true,
     "**/.vscode": true,
     "**/.idea": true,
     "**/*.log": true,

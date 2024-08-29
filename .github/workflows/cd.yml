@@ -1,0 +1,48 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Deploy to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          HOST: ${{ secrets.AWS_HOST }}
+          USER: ${{ secrets.AWS_USER }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
+            cd /path/to/your/project &&
+            git pull origin main &&
+
+            # Set up backend environment variables
+            echo "FASTAPI_PORT=${{ secrets.FASTAPI_PORT }}" > ./backend/.env
+            echo "FASTAPI_ALLOW_ORIGINS=${{ secrets.FASTAPI_ALLOW_ORIGINS }}" >> ./backend/.env
+            echo "FASTAPI_SSL_KEYFILE=${{ secrets.FASTAPI_SSL_KEYFILE }}" >> ./backend/.env
+            echo "FASTAPI_SSL_CERTFILE=${{ secrets.FASTAPI_SSL_CERTFILE }}" >> ./backend/.env
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ./backend/.env
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ./backend/.env
+            echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> ./backend/.env
+            echo "AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}" >> ./backend/.env
+
+            # Set up frontend environment variables
+            echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" > ./frontend/.env.local
+
+            docker-compose down &&
+            docker-compose up -d --build
+          '
