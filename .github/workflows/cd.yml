@@ -1,48 +1,91 @@
-name: Deploy to EC2
+name: Deploy to EC2 and ECR
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY_BACKEND: ${{ secrets.ECR_REPOSITORY_BACKEND }}
+  ECR_REPOSITORY_FRONTEND: ${{ secrets.ECR_REPOSITORY_FRONTEND }}
+  EC2_HOST: ${{ secrets.EC2_HOST }}
+  EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+  PROJECT_ROOT: /home/${{ secrets.EC2_USERNAME }}/jupyterm8
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push backend image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG ./backend
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
+
+      - name: Build, tag, and push frontend image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG ./frontend
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
 
       - name: Deploy to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          HOST: ${{ secrets.AWS_HOST }}
-          USER: ${{ secrets.AWS_USER }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
-            cd /path/to/your/project &&
-            git pull origin master &&
+          ssh -o StrictHostKeyChecking=no -i private_key ${EC2_USERNAME}@${EC2_HOST} '
+            mkdir -p ${{ env.PROJECT_ROOT }} &&
+            cd ${{ env.PROJECT_ROOT }} &&
+
+            # Pull the latest code
+            if [ -d ".git" ]; then
+              git pull origin main
+            else
+              git clone https://github.com/yourusername/notebook-parser.git .
+            fi
+
+            # Update docker-compose.yml with new image tags
+            sed -i "s|image: .*backend:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG|g" docker-compose.yml
+            sed -i "s|image: .*frontend:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG|g" docker-compose.yml
 
             # Set up backend environment variables
-            echo "FASTAPI_PORT=${{ secrets.FASTAPI_PORT }}" > ./backend/.env
-            echo "FASTAPI_ALLOW_ORIGINS=${{ secrets.FASTAPI_ALLOW_ORIGINS }}" >> ./backend/.env
-            echo "FASTAPI_SSL_KEYFILE=${{ secrets.FASTAPI_SSL_KEYFILE }}" >> ./backend/.env
-            echo "FASTAPI_SSL_CERTFILE=${{ secrets.FASTAPI_SSL_CERTFILE }}" >> ./backend/.env
-            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ./backend/.env
-            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ./backend/.env
-            echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> ./backend/.env
-            echo "AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}" >> ./backend/.env
+            cat << EOF > ./backend/.env
+            FASTAPI_PORT=${{ secrets.FASTAPI_PORT }}
+            FASTAPI_ALLOW_ORIGINS=${{ secrets.FASTAPI_ALLOW_ORIGINS }}
+            FASTAPI_SSL_KEYFILE=${{ secrets.FASTAPI_SSL_KEYFILE }}
+            FASTAPI_SSL_CERTFILE=${{ secrets.FASTAPI_SSL_CERTFILE }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_DEFAULT_REGION=${{ secrets.AWS_REGION }}
+            AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
+            EOF
 
             # Set up frontend environment variables
             echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" > ./frontend/.env.local
 
-            docker-compose down &&
+            # Pull the latest images and restart the containers
+            docker-compose pull
             docker-compose up -d --build
           '
