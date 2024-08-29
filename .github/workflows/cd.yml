@@ -12,6 +12,7 @@ env:
   AWS_HOST: ${{ secrets.AWS_HOST }}
   AWS_USER: ${{ secrets.AWS_USER }}
   PROJECT_ROOT: /home/${{ secrets.AWS_USER }}/jupyterm8
+  GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
 
 jobs:
   deploy:
@@ -48,40 +49,38 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG ./frontend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
 
-      - name: Copy docker-compose.yml to EC2
-        env:
-          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          AWS_HOST: ${{ secrets.AWS_HOST }}
-          AWS_USER: ${{ secrets.AWS_USER }}
-          PROJECT_ROOT: ${{ env.PROJECT_ROOT }}
-        run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -o StrictHostKeyChecking=no -i private_key docker-compose.yml $AWS_USER@$AWS_HOST:$PROJECT_ROOT/
-
       - name: Deploy to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
         run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} '
-            cd ${{ env.PROJECT_ROOT }} &&
+            cd ${{ env.PROJECT_ROOT }} || {
+              git clone https://$GITHUB_PAT@github.com/yourusername/notebook-parser.git ${{ env.PROJECT_ROOT }} &&
+              cd ${{ env.PROJECT_ROOT }};
+            }
+
+            # Pull the latest code
+            git pull origin master &&
 
             # Update docker-compose.yml with new image tags
             sed -i "s|image: .*backend:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG|g" docker-compose.yml
             sed -i "s|image: .*frontend:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG|g" docker-compose.yml
 
             # Set up backend environment variables
-            cat << EOF > ./backend/.env
-            FASTAPI_PORT=${{ secrets.FASTAPI_PORT }}
-            FASTAPI_ALLOW_ORIGINS=${{ secrets.FASTAPI_ALLOW_ORIGINS }}
-            FASTAPI_SSL_KEYFILE=${{ secrets.FASTAPI_SSL_KEYFILE }}
-            FASTAPI_SSL_CERTFILE=${{ secrets.FASTAPI_SSL_CERTFILE }}
-            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
-            AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
-            EOF
+            cat <<EOF > ./backend/.env
+FASTAPI_PORT=${{ secrets.FASTAPI_PORT }}
+FASTAPI_ALLOW_ORIGINS=${{ secrets.FASTAPI_ALLOW_ORIGINS }}
+FASTAPI_SSL_KEYFILE=${{ secrets.FASTAPI_SSL_KEYFILE }}
+FASTAPI_SSL_CERTFILE=${{ secrets.FASTAPI_SSL_CERTFILE }}
+AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
+AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
+EOF
 
             # Set up frontend environment variables
             echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" > ./frontend/.env.local
