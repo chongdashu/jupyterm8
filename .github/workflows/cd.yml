@@ -64,7 +64,6 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} '
             cd ${{ env.PROJECT_ROOT }} &&
 
