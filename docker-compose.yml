@@ -1,8 +1,8 @@
 services:
   backend:
     image: ${ECR_REGISTRY}/${ECR_REPOSITORY_BACKEND}:${IMAGE_TAG}
-    ports:
-      - "443:443"
+    expose:
+      - "8443"
     environment:
       - FASTAPI_PORT=${FASTAPI_PORT}
       - FASTAPI_ALLOW_ORIGINS=${FASTAPI_ALLOW_ORIGINS}
@@ -28,8 +28,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - "80:80" # Exposing HTTP
+      - "443:443" # Exposing HTTPS
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./default.conf:/etc/nginx/conf.d/default.conf:ro
