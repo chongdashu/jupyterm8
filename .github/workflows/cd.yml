@@ -33,33 +33,21 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, tag, and push backend image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG ./backend
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
+      # - name: Build, tag, and push backend image to Amazon ECR
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     IMAGE_TAG: ${{ github.sha }}
+      #   run: |
+      #     docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG ./backend
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
 
-      - name: Build, tag, and push frontend image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG ./frontend
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
-
-      - name: Copy docker-compose.yml and nginx to EC2
-        env:
-          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          AWS_HOST: ${{ secrets.AWS_HOST }}
-          AWS_USER: ${{ secrets.AWS_USER }}
-          PROJECT_ROOT: /home/${{ secrets.AWS_USER }}/jupyterm8
-        run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -o StrictHostKeyChecking=no -i private_key docker-compose.yml $AWS_USER@$AWS_HOST:$PROJECT_ROOT/docker-compose.yml
-          scp -o StrictHostKeyChecking=no -i private_key nginx.conf $AWS_USER@$AWS_HOST:$PROJECT_ROOT/nginx.conf
-          scp -o StrictHostKeyChecking=no -i private_key default.conf $AWS_USER@$AWS_HOST:$PROJECT_ROOT/default.conf
+      # - name: Build, tag, and push frontend image to Amazon ECR
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     IMAGE_TAG: ${{ github.sha }}
+      #   run: |
+      #     docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG ./frontend
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
 
       - name: Deploy to EC2
         env:
@@ -80,36 +68,28 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} << 'ENDSSH'
-            set -e
-            echo "Changing to project directory"
-            cd ${{ env.PROJECT_ROOT }} || { echo "Failed to change directory"; exit 1; }
+          ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} '
+            cd ${{ env.PROJECT_ROOT }} || mkdir -p ${{ env.PROJECT_ROOT }} && cd ${{ env.PROJECT_ROOT }};
 
-            echo "Logging in to ECR"
-            aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }} || { echo "Failed to log in to ECR"; exit 1; }
+            export AWS_ACCESS_KEY_ID=${{secrets.AWS_ACCESS_KEY_ID}}
+            export AWS_SECRET_ACCESS_KEY=${{secrets.AWS_SECRET_ACCESS_KEY}}
+            export AWS_DEFAULT_REGION=${{secrets.AWS_DEFAULT_REGION}}
 
-            echo "Creating .env file"
-            cat << EOF > .env
-            ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-            ECR_REPOSITORY_BACKEND=${{ secrets.ECR_REPOSITORY_BACKEND }}
-            ECR_REPOSITORY_FRONTEND=${{ secrets.ECR_REPOSITORY_FRONTEND }}
-            IMAGE_TAG=${{ github.sha }}
-            FASTAPI_PORT=${{ secrets.FASTAPI_PORT }}
-            FASTAPI_ALLOW_ORIGINS=${{ secrets.FASTAPI_ALLOW_ORIGINS }}
-            FASTAPI_SSL_KEYFILE=${{ secrets.FASTAPI_SSL_KEYFILE }}
-            FASTAPI_SSL_CERTFILE=${{ secrets.FASTAPI_SSL_CERTFILE }}
-            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
-            AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
-            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
-            EOF
+            aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin  ${{ steps.login-ecr.outputs.registry }}
 
-            echo "Contents of .env file (with secrets masked):"
-            sed 's/=.*/=***/' .env
-
-            echo "Running docker-compose"
-            docker-compose --env-file .env up -d || { echo "Failed to run docker-compose"; exit 1; }
-
-            echo "Deployment completed successfully"
-          ENDSSH
+            # Pull the latest images from ECR and start the containers with environment variables passed directly
+            ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }} \
+            ECR_REPOSITORY_BACKEND=${{ secrets.ECR_REPOSITORY_BACKEND }} \
+            ECR_REPOSITORY_FRONTEND=${{ secrets.ECR_REPOSITORY_FRONTEND }} \
+            IMAGE_TAG=${{ github.sha }} \
+            FASTAPI_PORT=${{ secrets.FASTAPI_PORT }} \
+            FASTAPI_ALLOW_ORIGINS=${{ secrets.FASTAPI_ALLOW_ORIGINS }} \
+            FASTAPI_SSL_KEYFILE=${{ secrets.FASTAPI_SSL_KEYFILE }} \
+            FASTAPI_SSL_CERTFILE=${{ secrets.FASTAPI_SSL_CERTFILE }} \
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} \
+            AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }} \
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
+            docker-compose up -d
+          '
