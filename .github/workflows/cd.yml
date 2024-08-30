@@ -61,47 +61,47 @@ jobs:
           scp -o StrictHostKeyChecking=no -i private_key nginx.conf $AWS_USER@$AWS_HOST:$PROJECT_ROOT/nginx.conf
           scp -o StrictHostKeyChecking=no -i private_key default.conf $AWS_USER@$AWS_HOST:$PROJECT_ROOT/default.conf
 
-          - name: Deploy to EC2
-          env:
-            PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-            ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-            IMAGE_TAG: ${{ github.sha }}
-            GH_PAT: ${{ secrets.GH_PAT }}
-            ECR_REPOSITORY_BACKEND: ${{ secrets.ECR_REPOSITORY_BACKEND }}
-            ECR_REPOSITORY_FRONTEND: ${{ secrets.ECR_REPOSITORY_FRONTEND }}
-            FASTAPI_PORT: ${{ secrets.FASTAPI_PORT }}
-            FASTAPI_ALLOW_ORIGINS: ${{ secrets.FASTAPI_ALLOW_ORIGINS }}
-            FASTAPI_SSL_KEYFILE: ${{ secrets.FASTAPI_SSL_KEYFILE }}
-            FASTAPI_SSL_CERTFILE: ${{ secrets.FASTAPI_SSL_CERTFILE }}
-            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-            AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
-            NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          run: |
-            echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-            ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} << EOF
-              cd ${{ env.PROJECT_ROOT }} || mkdir -p ${{ env.PROJECT_ROOT }} && cd ${{ env.PROJECT_ROOT }}
+      - name: Deploy to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          ECR_REPOSITORY_BACKEND: ${{ secrets.ECR_REPOSITORY_BACKEND }}
+          ECR_REPOSITORY_FRONTEND: ${{ secrets.ECR_REPOSITORY_FRONTEND }}
+          FASTAPI_PORT: ${{ secrets.FASTAPI_PORT }}
+          FASTAPI_ALLOW_ORIGINS: ${{ secrets.FASTAPI_ALLOW_ORIGINS }}
+          FASTAPI_SSL_KEYFILE: ${{ secrets.FASTAPI_SSL_KEYFILE }}
+          FASTAPI_SSL_CERTFILE: ${{ secrets.FASTAPI_SSL_CERTFILE }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} << EOF
+            cd ${{ env.PROJECT_ROOT }} || mkdir -p ${{ env.PROJECT_ROOT }} && cd ${{ env.PROJECT_ROOT }}
 
-              aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
 
-              # Create a .env file with all the necessary environment variables
-              cat << EOT > .env
-              ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-              ECR_REPOSITORY_BACKEND=${{ secrets.ECR_REPOSITORY_BACKEND }}
-              ECR_REPOSITORY_FRONTEND=${{ secrets.ECR_REPOSITORY_FRONTEND }}
-              IMAGE_TAG=${{ github.sha }}
-              FASTAPI_PORT=${{ secrets.FASTAPI_PORT }}
-              FASTAPI_ALLOW_ORIGINS=${{ secrets.FASTAPI_ALLOW_ORIGINS }}
-              FASTAPI_SSL_KEYFILE=${{ secrets.FASTAPI_SSL_KEYFILE }}
-              FASTAPI_SSL_CERTFILE=${{ secrets.FASTAPI_SSL_CERTFILE }}
-              AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-              AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-              AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
-              AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
-              NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
-              EOT
+            # Create a .env file with all the necessary environment variables
+            cat << EOT > .env
+            ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+            ECR_REPOSITORY_BACKEND=${{ secrets.ECR_REPOSITORY_BACKEND }}
+            ECR_REPOSITORY_FRONTEND=${{ secrets.ECR_REPOSITORY_FRONTEND }}
+            IMAGE_TAG=${{ github.sha }}
+            FASTAPI_PORT=${{ secrets.FASTAPI_PORT }}
+            FASTAPI_ALLOW_ORIGINS=${{ secrets.FASTAPI_ALLOW_ORIGINS }}
+            FASTAPI_SSL_KEYFILE=${{ secrets.FASTAPI_SSL_KEYFILE }}
+            FASTAPI_SSL_CERTFILE=${{ secrets.FASTAPI_SSL_CERTFILE }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
+            AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            EOT
 
-              # Run docker-compose with the .env file
-              docker-compose --env-file .env up -d
-            EOF
+            # Run docker-compose with the .env file
+            docker-compose --env-file .env up -d
+          EOF
