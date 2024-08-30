@@ -1,8 +1,8 @@
 services:
   backend:
     image: ${ECR_REGISTRY}/${ECR_REPOSITORY_BACKEND}:${IMAGE_TAG}
-    expose:
-      - "8000"
+    ports:
+      - "443:443"
     environment:
       - FASTAPI_PORT=${FASTAPI_PORT}
       - FASTAPI_ALLOW_ORIGINS=${FASTAPI_ALLOW_ORIGINS}
