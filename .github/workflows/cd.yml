@@ -59,6 +59,7 @@ jobs:
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
           scp -o StrictHostKeyChecking=no -i private_key docker-compose.yml $AWS_USER@$AWS_HOST:$PROJECT_ROOT/docker-compose.yml
           scp -o StrictHostKeyChecking=no -i private_key nginx.conf $AWS_USER@$AWS_HOST:$PROJECT_ROOT/nginx.conf
+          scp -o StrictHostKeyChecking=no -i private_key default.conf $AWS_USER@$AWS_HOST:$PROJECT_ROOT/default.conf
 
           - name: Deploy to EC2
           env:
