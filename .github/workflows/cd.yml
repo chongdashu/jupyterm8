@@ -49,6 +49,18 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG ./frontend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
 
+      - name: Copy docker-compose.yml and nginx to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          AWS_HOST: ${{ secrets.AWS_HOST }}
+          AWS_USER: ${{ secrets.AWS_USER }}
+          PROJECT_ROOT: /home/${{ secrets.AWS_USER }}/jupyterm8
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          scp -o StrictHostKeyChecking=no -i private_key docker-compose.yml $AWS_USER@$AWS_HOST:$PROJECT_ROOT/docker-compose.yml
+          scp -o StrictHostKeyChecking=no -i private_key nginx.conf $AWS_USER@$AWS_HOST:$PROJECT_ROOT/nginx.conf
+          scp -o StrictHostKeyChecking=no -i private_key default.conf $AWS_USER@$AWS_HOST:$PROJECT_ROOT/default.conf
+
       - name: Deploy to EC2
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
