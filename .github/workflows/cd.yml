@@ -89,6 +89,9 @@ jobs:
 
             aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin  ${{ steps.login-ecr.outputs.registry }}
 
+            # Stop and remove any existing containers
+            docker-compose down
+
             # Pull the latest images from ECR and start the containers with environment variables passed directly
             ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }} \
             ECR_REPOSITORY_BACKEND=${{ secrets.ECR_REPOSITORY_BACKEND }} \
