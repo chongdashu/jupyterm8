@@ -80,13 +80,16 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} << EOF
-            cd ${{ env.PROJECT_ROOT }} || mkdir -p ${{ env.PROJECT_ROOT }} && cd ${{ env.PROJECT_ROOT }}
+          ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} << 'ENDSSH'
+            set -e
+            echo "Changing to project directory"
+            cd ${{ env.PROJECT_ROOT }} || { echo "Failed to change directory"; exit 1; }
 
-            aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            echo "Logging in to ECR"
+            aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }} || { echo "Failed to log in to ECR"; exit 1; }
 
-            # Create a .env file with all the necessary environment variables
-            cat << EOT > .env
+            echo "Creating .env file"
+            cat << EOF > .env
             ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
             ECR_REPOSITORY_BACKEND=${{ secrets.ECR_REPOSITORY_BACKEND }}
             ECR_REPOSITORY_FRONTEND=${{ secrets.ECR_REPOSITORY_FRONTEND }}
@@ -100,8 +103,13 @@ jobs:
             AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
             AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
             NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
-            EOT
+            EOF
 
-            # Run docker-compose with the .env file
-            docker-compose --env-file .env up -d
-          EOF
+            echo "Contents of .env file (with secrets masked):"
+            sed 's/=.*/=***/' .env
+
+            echo "Running docker-compose"
+            docker-compose --env-file .env up -d || { echo "Failed to run docker-compose"; exit 1; }
+
+            echo "Deployment completed successfully"
+          ENDSSH
