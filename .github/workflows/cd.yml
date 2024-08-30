@@ -13,6 +13,7 @@ env:
   AWS_USER: ${{ secrets.AWS_USER }}
   PROJECT_ROOT: /home/${{ secrets.AWS_USER }}/jupyterm8
   GH_PAT: ${{ secrets.GH_PAT }}
+  NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
 jobs:
   deploy:
@@ -33,7 +34,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, tag, and push backend image to Amazon ECR
+      - name: (backend) Build, tag, and push backend image to Amazon ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -41,12 +42,13 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG ./backend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
 
-      - name: Build, tag, and push frontend image to Amazon ECR
+      - name: (frontend) Build, tag, and push frontend image to Amazon ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG ./frontend
+          docker build --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG ./frontend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
 
       - name: Copy docker-compose.yml and nginx to EC2

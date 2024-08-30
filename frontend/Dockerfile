@@ -1,6 +1,10 @@
 # Use an official Node runtime as a parent image
 FROM node:18-alpine
 
+# Set build-time environment variables
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Set the working directory in the container
 WORKDIR /app
 
