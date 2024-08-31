@@ -46,7 +46,7 @@ jobs:
             MIN_REQUIRED_SPACE=2097152 # 2GB in KB
             if [ "$AVAILABLE_SPACE" -lt "$MIN_REQUIRED_SPACE" ]; then
               echo "Not enough disk space. Pruning Docker resources..."
-              docker system prune -f
+              docker system prune -f -a
               AVAILABLE_SPACE_AFTER_PRUNE=$(df --output=avail / | tail -n1)
               if [ "$AVAILABLE_SPACE_AFTER_PRUNE" -lt "$MIN_REQUIRED_SPACE" ]; then
                 echo "Error: Still not enough disk space after pruning. At least 2GB is required."
