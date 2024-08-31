@@ -34,6 +34,27 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Check and prune disk space on EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          AWS_HOST: ${{ secrets.AWS_HOST }}
+          AWS_USER: ${{ secrets.AWS_USER }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${AWS_USER}@${AWS_HOST} '
+            AVAILABLE_SPACE=$(df --output=avail / | tail -n1)
+            MIN_REQUIRED_SPACE=2097152 # 2GB in KB
+            if [ "$AVAILABLE_SPACE" -lt "$MIN_REQUIRED_SPACE" ]; then
+              echo "Not enough disk space. Pruning Docker resources..."
+              docker system prune -f
+              AVAILABLE_SPACE_AFTER_PRUNE=$(df --output=avail / | tail -n1)
+              if [ "$AVAILABLE_SPACE_AFTER_PRUNE" -lt "$MIN_REQUIRED_SPACE" ]; then
+                echo "Error: Still not enough disk space after pruning. At least 2GB is required."
+                exit 1
+              fi
+            fi
+          '
+
       - name: (backend) Build, tag, and push backend image to Amazon ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
