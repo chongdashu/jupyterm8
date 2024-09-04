@@ -1,7 +1,10 @@
+"use client";
+
 import CreatorInfo from "@/components/CreatorInfo";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import NotebookExtractor from "@/components/NotebookExtractor";
+import PostHog from "@/components/PostHog";
 import StructuredData from "@/components/StructuredData";
 import Head from "next/head";
 
@@ -11,6 +14,7 @@ export default function Home() {
       <Head>
         <link rel="canonical" href="https://www.jupyterm8.xyz" />
       </Head>
+      <PostHog />
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-purple-100 to-blue-200">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-12">
