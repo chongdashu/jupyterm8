@@ -1,35 +1,36 @@
-"use client";
+import { FileText, Image } from "lucide-react";
+import Link from "next/link";
 
-import CreatorInfo from "@/components/CreatorInfo";
-import Footer from "@/components/Footer";
-import Header from "@/components/Header";
-import NotebookExtractor from "@/components/NotebookExtractor";
-import PostHog from "@/components/PostHog";
-import StructuredData from "@/components/StructuredData";
-import Head from "next/head";
+const tools = [
+  {
+    name: "Notebook Extractor",
+    description: "Extract markdown and code from Jupyter Notebooks",
+    icon: FileText,
+    link: "/notebook-extractor",
+  },
+  {
+    name: "Image Inspector",
+    description: "Edit images and select points",
+    icon: Image,
+    link: "/image-pointer",
+  },
+];
 
 export default function Home() {
   return (
     <>
-      <Head>
-        <link rel="canonical" href="https://www.jupyterm8.xyz" />
-      </Head>
-      <PostHog />
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-purple-100 to-blue-200">
-        <Header />
-        <main className="flex-grow container mx-auto px-4 py-12">
-          <NotebookExtractor />
-          {/* <OtherTools /> */}
-        </main>
-        <CreatorInfo />
-        <Footer />
+      <h1 className="text-4xl font-bold mb-8 text-center">Jupyterm8 Tools</h1>
+      <div className="grid md:grid-cols-2 gap-8">
+        {tools.map((tool) => (
+          <Link key={tool.name} href={tool.link} className="block">
+            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+              <tool.icon className="w-12 h-12 mb-4 text-blue-600" />
+              <h2 className="text-2xl font-semibold mb-2">{tool.name}</h2>
+              <p className="text-gray-600">{tool.description}</p>
+            </div>
+          </Link>
+        ))}
       </div>
-      <StructuredData
-        name="Jupyterm8"
-        url="https://www.jupyterm8.xyz"
-        description="Suite of tools for data scientists, developers, and researchers working with Jupyter Notebooks."
-        searchActionUrlTemplate="https://www.jupyterm8.xyz/search?q={search_term_string}"
-      />
     </>
   );
 }
