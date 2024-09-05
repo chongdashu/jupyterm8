@@ -19,7 +19,6 @@ const tools = [
 export default function Home() {
   return (
     <>
-      <h1 className="text-4xl font-bold mb-8 text-center">Jupyterm8 Tools</h1>
       <div className="grid md:grid-cols-2 gap-8">
         {tools.map((tool) => (
           <Link key={tool.name} href={tool.link} className="block">
