@@ -6,7 +6,7 @@ export default function Header() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold hover:text-blue-200">
-            Jupyterm8 - Tools for Jupyter Notebooks
+            Jupyterm8 - Useful Tools for AI/Research Engineers
           </Link>
           <nav>
             <ul className="flex space-x-4">

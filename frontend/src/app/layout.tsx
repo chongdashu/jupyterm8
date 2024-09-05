@@ -1,3 +1,4 @@
+import CreatorInfo from "@/components/CreatorInfo";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { Metadata } from "next";
@@ -7,9 +8,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Jupyterm8 - Jupyter Notebook Tools",
+  title: "Jupyterm8 - Useful tools for AI software and research engineers",
   description:
-    "Suite of tools for data scientists, developers, and researchers working with Jupyter Notebooks. Extract, convert, and manage your notebooks efficiently.",
+    "Suite of tools for data scientists, developers, and researchers. ",
   keywords:
     "Jupyter Notebook, extractor, data science, notebook converter, code search, version control",
   // openGraph: {
@@ -53,6 +54,7 @@ export default function RootLayout({
           <main className="flex-grow container mx-auto px-4 py-12">
             {children}
           </main>
+          <CreatorInfo />
           <Footer />
         </div>
       </body>

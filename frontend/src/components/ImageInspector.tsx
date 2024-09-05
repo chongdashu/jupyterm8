@@ -3,13 +3,14 @@ import { Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import ImageInspectorDescription from "./ImageInspectorDescription";
 
 interface Point {
   x: number;
   y: number;
 }
 
-const SimpleImageEditor = () => {
+const ImageInspector = () => {
   const [imageUrl, setImageUrl] = useState<string>("");
   const [points, setPoints] = useState<Point[]>([]);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -95,10 +96,12 @@ const SimpleImageEditor = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8 mb-12">
+    <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8 mb-12 transform hover:scale-105 transition-transform duration-300">
       <h1 className="text-4xl font-extrabold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-        Image Pointer
+        Image Inspector
       </h1>
+      <ImageInspectorDescription />
+
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-3/4">
           <input
@@ -116,9 +119,6 @@ const SimpleImageEditor = () => {
           </div>
         </div>
         <div className="lg:w-1/4 bg-gray-50 p-4 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-blue-600">
-            Selected Points
-          </h2>
           <div
             className="h-60 overflow-y-auto pr-2"
             style={{ scrollbarWidth: "thin" }}
@@ -171,4 +171,4 @@ const SimpleImageEditor = () => {
   );
 };
 
-export default SimpleImageEditor;
+export default ImageInspector;
