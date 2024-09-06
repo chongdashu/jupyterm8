@@ -1,11 +1,13 @@
-import { Badge } from "@/components/ui/badge";
+'use client'
 
-export default function ImageInspectorDescription() {
+import { Badge } from "@/components/ui/badge"
+
+export function ImageInspectorDescription() {
   const listItems = [
     "Getting coordinates of points",
     { text: "Getting hex values of points", wip: true },
     { text: "Getting bounding boxes", wip: true },
-  ];
+  ]
 
   return (
     <>
@@ -31,20 +33,15 @@ export default function ImageInspectorDescription() {
                 d="M5 13l4 4L19 7"
               />
             </svg>
-            <span className="flex-grow">
-              {typeof item === "string" ? item : item.text}
-              {typeof item !== "string" && item.wip && (
-                <Badge
-                  variant="outline"
-                  className="ml-1 text-[10px] py-0 px-1 bg-yellow-100 text-yellow-800 border-yellow-300 align-middle"
-                >
-                  WIP
-                </Badge>
-              )}
-            </span>
+            <span className="flex-grow">{typeof item === 'string' ? item : item.text}</span>
+            {typeof item !== 'string' && item.wip && (
+              <Badge variant="outline" className="ml-2 text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+                WIP
+              </Badge>
+            )}
           </li>
         ))}
       </ul>
     </>
-  );
+  )
 }

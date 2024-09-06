@@ -19,7 +19,7 @@ export default function Header() {
                 </Link>
               </li>
               <li>
-                <Link href="/image-pointer" className="hover:text-blue-200">
+                <Link href="/image-inspector" className="hover:text-blue-200">
                   Image Inspector
                 </Link>
               </li>

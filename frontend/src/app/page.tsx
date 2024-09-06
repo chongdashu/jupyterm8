@@ -12,7 +12,7 @@ const tools = [
     name: "Image Inspector",
     description: "Edit images and select points",
     icon: Image,
-    link: "/image-pointer",
+    link: "/image-inspector",
   },
 ];
 
