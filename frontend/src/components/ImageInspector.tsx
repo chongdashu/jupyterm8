@@ -1,4 +1,5 @@
 "use client";
+import posthog from "@/posthog";
 import { Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -47,6 +48,10 @@ const ImageInspector = () => {
         const result = e.target?.result;
         if (typeof result === "string") {
           setImageUrl(result);
+          posthog.capture("image_uploaded", {
+            fileType: file.type,
+            fileSize: file.size,
+          });
         }
       };
       reader.readAsDataURL(file);
@@ -70,7 +75,11 @@ const ImageInspector = () => {
     const x = Math.round((event.clientX - rect.left) * scaleX);
     const y = Math.round((event.clientY - rect.top) * scaleY);
 
-    setPoints((prevPoints) => [...prevPoints, { x, y }]);
+    setPoints((prevPoints) => {
+      const newPoints = [...prevPoints, { x, y }];
+      posthog.capture("point_added", { x, y, totalPoints: newPoints.length });
+      return newPoints;
+    });
 
     const ctx = canvas.getContext("2d");
     if (ctx) {
@@ -91,8 +100,12 @@ const ImageInspector = () => {
       .then(() => {
         setShowTooltip(true);
         setTimeout(() => setShowTooltip(false), 2000);
+        posthog.capture("code_copied", { numPoints: points.length });
       })
-      .catch((err) => console.error("Failed to copy: ", err));
+      .catch((err) => {
+        console.error("Failed to copy: ", err);
+        posthog.capture("code_copy_failed", { error: String(err) });
+      });
   };
 
   return (

@@ -1,5 +1,6 @@
 "use client";
 
+import posthog from "@/posthog";
 import { Copy, Download } from "lucide-react";
 import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -25,8 +26,17 @@ export default function NotebookForm() {
       const data = await response.json();
       setDownloadUrl(data.download_url);
       setNotebookContent(data.content);
+
+      // Track successful notebook extraction
+      posthog.capture("notebook_extracted", { url: url });
     } catch (error) {
       console.error("Error:", error);
+
+      // Track failed notebook extraction
+      posthog.capture("notebook_extraction_failed", {
+        url: url,
+        error: String(error),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -38,9 +48,15 @@ export default function NotebookForm() {
       .then(() => {
         setShowTooltip(true);
         setTimeout(() => setShowTooltip(false), 2000);
+
+        // Track successful copy to clipboard
+        posthog.capture("notebook_content_copied");
       })
       .catch((err) => {
         console.error("Failed to copy: ", err);
+
+        // Track failed copy to clipboard
+        posthog.capture("notebook_content_copy_failed", { error: String(err) });
       });
   };
 
