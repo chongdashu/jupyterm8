@@ -9,12 +9,37 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Jupyterm8 - Useful tools for AI software and research engineers",
+  title: "Jupyterm8 - AI Research Tools",
   description:
-    "Suite of tools for data scientists, developers, and researchers. ",
+    "Practical mini tools for AI research scientists and engineers. Streamline your workflow with our suite of specialized tools for Jupyter Notebooks, image analysis, and more.",
   keywords:
-    "Jupyter Notebook, extractor, data science, notebook converter, code search, version control",
+    "AI research, machine learning, data science, Jupyter Notebook, image analysis, model visualization",
+  openGraph: {
+    title: "Jupyterm8 - AI Research Tools",
+    description:
+      "Practical mini tools for AI research scientists and engineers. Streamline your workflow and boost productivity.",
+    url: "https://www.jupyterm8.xyz",
+    siteName: "Jupyterm8",
+    images: [
+      {
+        url: "https://www.jupyterm8.xyz/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Jupyterm8 - AI Research Tools",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Jupyterm8 - AI Research Tools",
+    description:
+      "Practical mini tools for AI research scientists and engineers. Streamline your workflow and boost productivity.",
+    images: ["https://www.jupyterm8.xyz/og-image.jpg"],
+  },
   robots: "index, follow",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
