@@ -1,25 +1,31 @@
-"use client";
-
 import CreatorInfo from "@/components/CreatorInfo";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { initPostHog } from "@/posthog";
-import { useEffect } from "react";
+import { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-// Move metadata to a separate file, e.g., metadata.ts
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Jupyterm8 - Useful tools for AI software and research engineers",
+  description:
+    "Suite of tools for data scientists, developers, and researchers. ",
+  keywords:
+    "Jupyter Notebook, extractor, data science, notebook converter, code search, version control",
+  robots: "index, follow",
+};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  useEffect(() => {
-    initPostHog();
-  }, []);
-
+  initPostHog();
   return (
     <html lang="en">
-      <body>
+      <body className={inter.className}>
         <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-100 to-purple-100">
           <Header />
           <main className="flex-grow container mx-auto px-4 py-12">
