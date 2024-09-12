@@ -1,7 +1,7 @@
 "use client";
 
-import posthog from "@/posthog";
 import { Copy, Download } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -13,6 +13,7 @@ export default function NotebookForm() {
   const [downloadUrl, setDownloadUrl] = useState("");
   const [notebookContent, setNotebookContent] = useState("");
   const [showTooltip, setShowTooltip] = useState(false);
+  const posthog = usePostHog();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

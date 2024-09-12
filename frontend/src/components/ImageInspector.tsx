@@ -1,6 +1,6 @@
 "use client";
-import posthog from "@/posthog";
 import { Copy } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { useEffect, useRef, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -17,7 +17,7 @@ const ImageInspector = () => {
   const [showTooltip, setShowTooltip] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
+  const posthog = usePostHog();
   useEffect(() => {
     if (imageUrl) {
       const image = new Image();
